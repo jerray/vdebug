@@ -18,6 +18,7 @@ class Runner:
 
     def __init__(self):
         self.api = None
+        self.proxy = None
         vdebug.opts.Options.set(vim.eval('g:vdebug_options'))
         self.breakpoints = vdebug.breakpoint.Store()
         self.keymapper = vdebug.util.Keymapper()
@@ -40,6 +41,15 @@ class Runner:
                 vdebug.log.Log.set_logger(vdebug.log.FileLogger(\
                         vdebug.opts.Options.get('debug_file_level'),\
                         vdebug.opts.Options.get('debug_file')))
+
+            if vdebug.opts.Options.isset('proxy'):
+                proxy = vdebug.opts.Options.get('proxy', dict)
+                self.proxy = vdebug.dbgp.Proxy(\
+                        proxy['host'],\
+                        proxy['port'],\
+                        vdebug.opts.Options.get('port',int),\
+                        vdebug.opts.Options.get('ide_key'))
+
             self.listen(\
                     vdebug.opts.Options.get('server'),\
                     vdebug.opts.Options.get('port',int),\
@@ -377,11 +387,17 @@ class Runner:
                 self.api = None
             else:
                 self.api = None
+
+            if self.proxy:
+                self.proxy.stop()
+                self.proxy = None
         except EOFError:
             self.api = None
+            self.proxy = None
             self.ui.say("Connection has been closed")
         except socket.error:
             self.api = None
+            self.proxy = None
             self.ui.say("Connection has been closed")
 
     def close(self):

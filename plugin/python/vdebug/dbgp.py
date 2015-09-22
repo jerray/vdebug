@@ -7,6 +7,7 @@ import socket
 import vdebug.log
 import base64
 import time
+import string
 
 """ Response objects for the DBGP module."""
 
@@ -684,6 +685,30 @@ class EvalProperty(ContextProperty):
                 else:
                     self.display_name = self.parent.display_name + \
                         "." + name
+
+""" Proxy """
+class Proxy:
+    def __init__(self,host,port,local_port,ide_key):
+        self.host = host
+        self.port = int(port)
+        self.local_port = int(local_port)
+        self.ide_key = ide_key
+
+        self.register()
+
+    def register(self):
+        self.command(['proxyinit', '-p', str(self.local_port), '-k', self.ide_key, '-m 1'])
+
+    def stop(self):
+        self.command(['proxystop', '-k', self.ide_key])
+
+    def command(self,commands):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            s.connect((self.host, self.port))
+            s.sendall(string.join(commands, ' '))
+        finally:
+            s.close()
 
 
 """ Errors/Exceptions """
